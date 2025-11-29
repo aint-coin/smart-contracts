@@ -22,40 +22,46 @@ func generateRandInt (blockId: String, rsaString: String, num: Int) = {
 }
 
 @Callable(i)
-func test (blockId: String, rsaSign: String) = {
+func mineIntent (address: String) = {
+
+    let amount = i.payments[0].amount
+    let totalBefore = getIntegerValue("total")
+    let totalAfter = totalBefore + amount
+    let start = totalBefore + 1
+    let end = totalBefore + amount
+    let minerValue = "%d%d%d" + SEP + toString(amount) + SEP + toString(start) + SEP + toString(end)
+
+    let execute = if (amount > 0) then
+    [
+        StringEntry("miner" + SEP + address, minerValue),
+        IntegerEntry("total", totalAfter)
+    ]
+    else
+        []
+
+    execute
+}
+
+@Callable(i)
+func mineWinner (blockId: String, rsaSign: String) = {
+
+    let total = getIntegerValue("total")
+    let winner = generateRandInt(blockId, rsaSign, total)
 
     let rand = generateRandInt(blockId, rsaSign, 1000)
 
     [
-        IntegerEntry("rand", rand)
+        IntegerEntry("winner", winner)
     ]
 }
 
 @Callable(i)
-func mineIntent (address: String) = {
-
-    let amount = i.payments[0].amount
-    let total = getIntegerValue("total") + amount
-    let start = total + 1
-    let end = total + amount
-    let minerValue = "%d%d" + SEP + toString(amount) + SEP + toString(start) + SEP + toString(end)
-
-    [
-        StringEntry("miner_" + address, minerValue),
-        IntegerEntry("total", total)
-    ]
-}
-
-@Callable(i)
-func mineExecute() = {
-
-    [
-        DeleteEntry("^miner_.*$")
-    ]
-}
-
-@Callable(i)
-func mine() = {
+func mineExecute (miner: String) = {
+    let winner = getIntegerValue("winner")
+    let winnerVal = getStringValue(miner)
+    let winnerValArr = split(winnerVal, SEP)
+    let winnerKeyArr = split(miner, SEP)
+    let winnerAddr = addressFromStringValue(winnerKeyArr[1])
 
     let amount = 5000000000
     let lb = getIntegerValue("lastBlock")
@@ -67,11 +73,21 @@ func mine() = {
         IntegerEntry("block", blockIncr),
 
         Reissue(ATCID, amount, true),
-        ScriptTransfer(i.caller, amount, ATCID)
+        ScriptTransfer(winnerAddr, amount, ATCID),
+        IntegerEntry("total", 0),
+        IntegerEntry("winner", 0)
     ]
 
     let execute = if (height % 10 == 0 && height != lb) then newBlock else
         []
 
     execute
+}
+
+@Callable(i)
+func mineDelete(miner: String) = {
+
+    [
+        DeleteEntry(miner)
+    ]
 }
