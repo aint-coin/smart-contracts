@@ -2,7 +2,57 @@
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
+let RSAPUBLIC = fromBase64String("base64:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA78ZlexLcQwTPFkAO7cVdkUFDh5ykvWjDNYfTdzhfOw4yScG/G+AsSHuFSvuqJe6J0Ltg5hj7D7YV/XEPlbEtm2iVXXX2cgGY3YzSPwPoqB/oyNSM/XNhqwPasfuGFXTgWNJKGR/mIt/LMJYdURuJUyJSH4nPnieebmLLuM965PLetsaAA4BfDhXZfn8i9cBvuTPNavBbPmD7hFR0Qab/Q8J3JIeS7cmN4ruLT04SW5JzkIt36zXtchThCJa6NV4h65c4apgjLdG64yeCzZxNe8jlmise3S5fZZtoIfD0u/LHg8SfVhP7gwomE+H1o+a3Z4ep0egBt1kdIZPzU35bswIDAQAB")
+
 let ATCID = fromBase58String("9QvRoCqAR8TZWFJTRtAjnxxeMj4sY6wKTD22hKDcjhnR")
+
+let SEP = "__"
+
+func generateRandInt (blockId: String, rsaString: String, num: Int) = {
+    let rsaSign = fromBase64String(rsaString)
+    let rsaSigValid = rsaVerify(SHA256, toBytes(blockId), rsaSign, RSAPUBLIC)
+    if (rsaSigValid)
+        then {
+            let rand = (toInt(sha256(rsaSign)) % num)
+            if ((0 > rand))
+                then ((-1 * rand) + 1)
+                else (rand + 1)
+            }
+        else throw("Invalid RSA signature")
+}
+
+@Callable(i)
+func test (blockId: String, rsaSign: String) = {
+
+    let rand = generateRandInt(blockId, rsaSign, 1000)
+
+    [
+        IntegerEntry("rand", rand)
+    ]
+}
+
+@Callable(i)
+func mineIntent (address: String) = {
+
+    let amount = i.payments[0].amount
+    let total = getIntegerValue("total") + amount
+    let start = total + 1
+    let end = total + amount
+    let minerValue = "%d%d" + SEP + toString(amount) + SEP + toString(start) + SEP + toString(end)
+
+    [
+        StringEntry("miner_" + address, minerValue),
+        IntegerEntry("total", total)
+    ]
+}
+
+@Callable(i)
+func mineExecute() = {
+
+    [
+        DeleteEntry("^miner_.*$")
+    ]
+}
 
 @Callable(i)
 func mine() = {
@@ -15,6 +65,7 @@ func mine() = {
     let newBlock = [
         IntegerEntry("lastBlock", height),
         IntegerEntry("block", blockIncr),
+
         Reissue(ATCID, amount, true),
         ScriptTransfer(i.caller, amount, ATCID)
     ]
@@ -23,4 +74,4 @@ func mine() = {
         []
 
     execute
-  }
+}
