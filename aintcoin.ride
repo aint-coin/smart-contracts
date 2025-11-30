@@ -30,11 +30,14 @@ func mineIntent (address: String) = {
     let start = totalBefore + 1
     let end = totalBefore + amount
     let minerValue = "%d%d%d" + SEP + toString(amount) + SEP + toString(start) + SEP + toString(end)
+    
+    let txid = if (totalBefore == 0) then i.transactionId.toBase58String() else getStringValue("txid")
 
     let execute = if (amount > 0) then
     [
         StringEntry("miner" + SEP + address, minerValue),
-        IntegerEntry("total", totalAfter)
+        IntegerEntry("total", totalAfter),
+        StringEntry("blockId",  txid)
     ]
     else
         []
@@ -47,8 +50,6 @@ func mineWinner (blockId: String, rsaSign: String) = {
 
     let total = getIntegerValue("total")
     let winner = generateRandInt(blockId, rsaSign, total)
-
-    let rand = generateRandInt(blockId, rsaSign, 1000)
 
     [
         IntegerEntry("winner", winner)
