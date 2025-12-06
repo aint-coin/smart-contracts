@@ -21,6 +21,19 @@ func generateRandInt (blockId: String, rsaString: String, num: Int) = {
         else throw("Invalid RSA signature")
 }
 
+func checkWinner (miner: String) = {
+    let winner = getIntegerValue("winner")
+    let winnerVal = getStringValue(miner)
+    let winnerValArr = split(winnerVal, SEP)
+    let start = parseIntValue(winnerValArr[2])
+    let end = parseIntValue(winnerValArr[3])
+
+    if (start > winner || end < winner) then
+        throw("This miner is not winner.")
+    else
+        true
+}
+
 @Callable(i)
 func mineIntent (address: String) = {
 
@@ -49,12 +62,17 @@ func mineIntent (address: String) = {
 @Callable(i)
 func mineWinner (blockId: String, rsaSign: String) = {
 
+    let blockIdSaved = getStringValue("blockId")
+    if (blockIdSaved != blockId) then throw("Wrong block ID.") else
     let total = getIntegerValue("total")
-    let winner = generateRandInt(blockId, rsaSign, total)
 
-    [
-        IntegerEntry("winner", winner)
-    ]
+    if (total > 0) then
+        let winner = generateRandInt(blockId, rsaSign, total)
+        [
+            IntegerEntry("winner", winner)
+        ]
+    else
+        []
 }
 
 @Callable(i)
@@ -80,7 +98,7 @@ func mineExecute (miner: String) = {
         IntegerEntry("winner", 0)
     ]
 
-    let execute = if (height % 10 == 0 && height != lb) then newBlock else
+    let execute = if (height % 10 == 0 && height != lb && checkWinner(miner)) then newBlock else
         []
 
     execute
