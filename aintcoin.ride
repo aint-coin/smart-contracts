@@ -34,29 +34,45 @@ func checkWinner (miner: String) = {
         true
 }
 
+func getRewardAmount() = {
+    let reward = getIntegerValue("reward")
+    let r = if (height % 210000 == 0) then {
+        
+        reward / 2
+    } else reward
+
+    r
+}
+
 @Callable(i)
 func mineIntent (address: String) = {
 
-    let amount = i.payments[0].amount
-    let totalBefore = getIntegerValue("total")
-    let totalAfter = totalBefore + amount
-    let start = totalBefore + 1
-    let end = totalBefore + amount
-    let minerValue = "%d%d%d" + SEP + toString(amount) + SEP + toString(start) + SEP + toString(end)
-    
-    # let txid = if (totalBefore == 0) then i.transactionId.toBase58String() else getStringValue("txid")
-    let txid = i.transactionId.toBase58String()
-
-    let execute = if (amount > 0) then
-    [
-        StringEntry("miner" + SEP + address, minerValue),
-        IntegerEntry("total", totalAfter),
-        StringEntry("blockId",  txid)
-    ]
+    let key = "miner" + SEP + address
+    let minerValueExisting = getString(key).valueOrElse("")
+    if (minerValueExisting != "") then
+        throw("Intent already existing.")
     else
-        []
 
-    execute
+        let amount = i.payments[0].amount
+        let totalBefore = getIntegerValue("total")
+        let totalAfter = totalBefore + amount
+        let start = totalBefore + 1
+        let end = totalBefore + amount
+        let minerValue = "%d%d%d" + SEP + toString(amount) + SEP + toString(start) + SEP + toString(end)
+        
+        # let txid = if (totalBefore == 0) then i.transactionId.toBase58String() else getStringValue("txid")
+        let txid = i.transactionId.toBase58String()
+
+        let execute = if (amount > 0) then
+        [
+            StringEntry(key, minerValue),
+            IntegerEntry("total", totalAfter),
+            StringEntry("blockId",  txid)
+        ]
+        else
+            []
+
+        execute
 }
 
 @Callable(i)
@@ -83,7 +99,7 @@ func mineExecute (miner: String) = {
     let winnerKeyArr = split(miner, SEP)
     let winnerAddr = addressFromStringValue(winnerKeyArr[1])
 
-    let amount = 5000000000
+    let amount = getRewardAmount()
     let lb = getIntegerValue("lastBlock")
     let block = getIntegerValue("block")
     let blockIncr = block + 1
