@@ -124,6 +124,7 @@ func mineDelete(miner: String) = {
     [
         DeleteEntry(miner),
         IntegerEntry("total", 0),
-        IntegerEntry("winner", 0)
+        IntegerEntry("winner", 0),
+        IntegerEntry("reward", 5000000000)
     ]
 }
