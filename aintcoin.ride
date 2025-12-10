@@ -4,7 +4,7 @@
 
 let RSAPUBLIC = fromBase64String("base64:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA78ZlexLcQwTPFkAO7cVdkUFDh5ykvWjDNYfTdzhfOw4yScG/G+AsSHuFSvuqJe6J0Ltg5hj7D7YV/XEPlbEtm2iVXXX2cgGY3YzSPwPoqB/oyNSM/XNhqwPasfuGFXTgWNJKGR/mIt/LMJYdURuJUyJSH4nPnieebmLLuM965PLetsaAA4BfDhXZfn8i9cBvuTPNavBbPmD7hFR0Qab/Q8J3JIeS7cmN4ruLT04SW5JzkIt36zXtchThCJa6NV4h65c4apgjLdG64yeCzZxNe8jlmise3S5fZZtoIfD0u/LHg8SfVhP7gwomE+H1o+a3Z4ep0egBt1kdIZPzU35bswIDAQAB")
 
-let ATCID = fromBase58String("9QvRoCqAR8TZWFJTRtAjnxxeMj4sY6wKTD22hKDcjhnR")
+let ATCID = fromBase58String("7CChZMGthhY74pV89rjL6vHsbrFGTTaGqkMZoBfXGeoh")
 
 let SEP = "__"
 
@@ -109,9 +109,7 @@ func mineExecute (miner: String) = {
         IntegerEntry("block", blockIncr),
 
         Reissue(ATCID, amount, true),
-        ScriptTransfer(winnerAddr, amount, ATCID),
-        IntegerEntry("total", 0),
-        IntegerEntry("winner", 0)
+        ScriptTransfer(winnerAddr, amount, ATCID)
     ]
 
     let execute = if (height % 10 == 0 && height != lb && checkWinner(miner)) then newBlock else
@@ -124,6 +122,8 @@ func mineExecute (miner: String) = {
 func mineDelete(miner: String) = {
 
     [
-        DeleteEntry(miner)
+        DeleteEntry(miner),
+        IntegerEntry("total", 0),
+        IntegerEntry("winner", 0)
     ]
 }
